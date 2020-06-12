@@ -1,5 +1,4 @@
 # Cloud Security Assessment Tool
-# Animo Chatos Team
 
 ## Usage (TODO)
 ### Building the dockerfile
