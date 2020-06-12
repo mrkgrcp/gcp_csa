@@ -1,0 +1,163 @@
+# Raw commands from CIS GCP Foundation Benchmark
+# Equivalent modules need to be checked and added
+
+# A service account needs to previously be defined (gcp_scout ansible role)
+---
+
+- name: GCP Scout Scanner Raw Commands
+  hosts: 127.0.0.1
+  connection: local
+  become: yes
+  vars:
+    gcp_csa_file_location: "./files"
+    gcp_csa_result_location: "./results"
+    gcp_csa_default_key_file: "{{ gcp_csa_file_location }}/key.secret.json"
+    gcp_csa_service_enabled_required_list: "./files/gcp_csa_service_enabled_required_list.json"
+  ##################################################
+  # Pre tasks
+  # TODO
+  pre_tasks:
+  - name: If necessary, enable required services for assigned projects
+    debug:
+      msg: "TODO Use the required service list to enable custom projects passed by extra vars to the playbook"
+  tasks:
+
+  ################################################## 
+  # Authorizations tasks
+  # TODO
+  # Error handling (Custom message when var fails)
+
+  - name: Authorization tasks
+    shell:
+      cmd: "gcloud auth activate-service-account --key-file={{ gcp_csa_key_file | default(gcp_csa_default_key_file, true) }}"
+    
+  
+  ##################################################
+  # Helper tasks
+  # Need for resource list before applying the csa 
+  # TODO Check json filters
+  # - List of Projects available for the Service Account (Required)
+  # - List of Services enabled by Project (Required)
+  # - List of Organizations available (TODO)
+  # - List of Folders available (TODO)
+  # - List of Service Account by Project (Required) 
+  # - List of Keys by Service Account (TODO)
+  # - List of Keys managed by user by Service Account
+  #
+  - name: Initialize facts
+    block:
+      - name: Test
+        set_fact:
+          gcp_csa_service_account_list: []
+      - name: Test
+        set_fact:
+          gcp_csa_service_enabled_list: []
+
+  - name: Helper tasks
+    block:
+      - name: Get a list of projects that the service account has access to
+        shell: 
+          cmd: gcloud projects list --format=json
+        register: gcloud_project_list
+      - set_fact:
+          gcp_csa_project_list: "{{ gcloud_project_list['stdout'] | from_json }}"
+
+      - name: Get a list of service accounts from each project
+        shell:
+          cmd: "gcloud iam service-accounts list --project={{ item.projectId }} --format=json"
+        loop: "{{ gcp_csa_project_list }}"
+        register: gcloud_service_account_list
+      - set_fact:
+          gcp_csa_service_account_list: "{{ gcp_csa_service_account_list + [ (item['stdout'] | from_json) ] }}"
+        loop: "{{ gcloud_service_account_list['results'] }}"
+   
+      - name: Get a list of Services enabled in each project
+        shell:
+          cmd: "gcloud services list --project={{ item.projectId }} --format=json"
+        loop: "{{ gcp_csa_project_list }}"
+        register: gcloud_service_enabled_list
+      - set_fact:
+          gcp_csa_service_enabled_list: "{{ gcp_csa_service_enabled_list + [ (item['stdout'] | from_json) ] }}"
+        loop: "{{ gcloud_service_enabled_list['results'] }}"
+
+  - name: Save relevant info
+    block:
+      - local_action: copy content={{ gcp_csa_project_list }} dest={{ gcp_csa_result_location }}/result.gcp_csa_project_list.json
+      - local_action: copy content={{ gcp_csa_service_enabled_list }} dest={{ gcp_csa_result_location }}/result.gcp_csa_service_enabled_list.json
+      - local_action: copy content={{ gcp_csa_service_account_list }} dest={{ gcp_csa_result_location }}/result.gcp_csa_service_account_list.json
+
+# TODO
+# Fromat output correspondingly
+  - name: CIS GCP v1.1.0 - Identity and Access Management
+    block:
+      - name: 1.1 Ensure that corporate login credentials are used (Scored)
+        block:
+          - name: List accounts that have been granted access to that project
+            shell:
+              cmd: "gcloud projects get-iam-policy {{ item.projectId }}"
+            loop: "{{ gcp_csa_project_list }}"
+            register: gcloud_1_1_1_output
+          - name: List accounts added to each folder - TODO
+            shell:
+              cmd: "gcloud resource-manager folders get-iam-policy {{ item.folderId }}"
+            loop: "{{ gcp_csa_folder_list }}"
+            register: gcloud_1_1_2_output
+          - name: List organization s IAM policy - TODO
+            shell:
+              cmd: "gcloud organizations get-iam-policy {{ item.organizationId }}"
+            loop: "{{ gcp_csa_organization_list }}"
+            register: gcloud_1_1_3_output
+        rescue:
+          - debug:
+              msg: "An error ocurred. Check the necessary parameters (service account used, services or APIs enabled on the project, organization and folders existing"
+       
+      - name: 1.2 Ensure that mutifactor auth is enabled for all non-service account  (Not Scored)
+        block:
+          - name:
+            command:
+              cmd: echo TODO
+        rescue:
+          - debug:
+              msg: "An error oocurred"
+
+     # - debug:
+     #     msg:
+     #     - "{{ gcp_csa_project_list }}"
+     #     - "{{ gcp_csa_service_enabled_list }}"
+     #     - "{{ gcp_csa_service_account_list }}"
+
+     #  TODO
+     # - name: Get a list of keys for each service accoutn
+     #   shell:
+     #     cmd: "gcloud iam service-accounts keys list --iam-account={{ item.uniqueId }}"
+     #   loop: "{{ gcp_csa_service_account_list }}"
+
+     # - debug:
+     #     msg:
+     #     - "{{ item['stdout'] | from_json }}"
+     #   loop: "{{ gcloud_service_account_list['results'] }}"
+
+##################################################
+# Debug helper tasks
+#
+#  - name: Show helper tasks results
+#    debug:
+#      msg:
+#      - "{{ item.projectId }}"
+#    loop: "{{ gcp_csa_project_list }}"
+#
+# TODO
+# Once got all the project ids above
+#      - name: Get a list of service accounts from this project
+#        shell:
+#          cmd: gcloud iam service-accounts list --format=json
+#        register: gcloud_service_account_list
+#      - set_fact:
+#          gcp_csa_project_list: "{{ gcloud_service_account_list['stdout'] | from_json }}"
+#
+# TODO
+#  - name: CIS GCP v1.1.0 - 1 Identity and Access Management
+#    block:
+#      - name: 1.1 Ensure that corporate login credentials are used
+#        shell:
+#          cmd: 

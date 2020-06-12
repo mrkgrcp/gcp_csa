@@ -1,0 +1,6 @@
+---
+# tasks file for ./roles/gcp_scout
+
+- name: Installation tasks for GCP Scout suite
+  import_tasks: gcp_scout_install_packages.yml
+  when: ansible_facts['os_family'] | lower == 'debian'

@@ -1,0 +1,4 @@
+sudo docker build --no-cache -t gcp_scout . 
+
+sudo docker run -dt -v "$PWD/ansible/playbooks":/opt/playbooks --name gcp_scout --hostname gcp_scout gcp_scout 
+sudo docker exec -it gcp_scout /bin/bash

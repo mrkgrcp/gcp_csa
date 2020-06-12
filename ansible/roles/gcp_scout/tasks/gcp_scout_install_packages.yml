@@ -1,0 +1,30 @@
+- name: Install necessary packages
+  apt:
+    name: "{{ gcp_scout_packages }}"
+    update_cache: yes
+
+- name: Install necessary pip packages
+  pip:
+    name: "{{ gcp_scout_pip_packages }}"
+
+- name: Import the Google Cloud public key
+  apt_key:
+    url: "{{ gcp_scout_gcloud_install_key_url }}"
+    keyring: "{{ gcp_scout_gcloud_install_keyring }}"
+    state: present
+
+- name: Add Google Cloud repos
+  apt_repository:
+    repo: "{{ gcp_scout_gcloud_install_repo }}"
+    state: present
+    filename: "{{ gcp_scout_gcloud_install_repo_file }}"
+
+- name: Install the gcloud suite (GCP SDK)
+  apt:
+    name: "{{ gcp_scout_gcloud_install_packages }}"
+    update_cache: yes
+
+# Test later
+#- name: Install necessary pip packages for scout 
+#  pip:
+#    requirements: "{{ gcp_scout_workdir }}/files/requirements.txt"

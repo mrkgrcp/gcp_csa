@@ -1,0 +1,27 @@
+---
+# vars file for ./roles/gcp_scout
+
+gcp_scout_rootdir: "{{ lookup('env', 'GCP_SCOUT_WORKDIR') | default ('/opt') }}"
+gcp_scout_workdir: "{{ gcp_scout_rootdir }}/ansible/roles/gcp_scout }}"
+
+gcp_scout_packages:
+  - python-pip
+  - python3-pip
+  - python-setuptools
+  - python3-setuptools
+  - python-virtualenv
+  - python3-virtualenv
+  - apt-transport-https
+  - ca-certificates
+  - gnupg
+
+gcp_scout_pip_packages:
+  - requests
+  - google-auth
+
+gcp_scout_gcloud_install_key_url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+gcp_scout_gcloud_install_keyring: /usr/share/keyrings/cloud.google.gpg
+gcp_scout_gcloud_install_repo: deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main
+gcp_scout_gcloud_install_repo_file: google-cloud-sdk.list
+gcp_scout_gcloud_install_packages:
+  - google-cloud-sdk
